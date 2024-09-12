@@ -1,0 +1,58 @@
+name: Slack Notification on Push to Main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify_slack:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Send notification to Slack
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_REF: ${{ github.ref }}
+        GITHUB_ACTOR: ${{ github.actor }}
+        GITHUB_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        GITHUB_COMMIT_URL: ${{ github.event.head_commit.url }}
+        GITHUB_COMMIT_TIMESTAMP: ${{ github.event.head_commit.timestamp }}
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{
+          "blocks": [
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": ":rocket: *Atualização na main do repositório:* <https://github.com/${GITHUB_REPOSITORY}|${GITHUB_REPOSITORY}>"
+              }
+            },
+            {
+              "type": "section",
+              "fields": [
+                {
+                  "type": "mrkdwn",
+                  "text": "*Branch:* `${GITHUB_REF}`"
+                },
+                {
+                  "type": "mrkdwn",
+                  "text": "*Autor do Commit:* `${GITHUB_ACTOR}`"
+                },
+                {
+                  "type": "mrkdwn",
+                  "text": "*Mensagem do Commit:* `${GITHUB_COMMIT_MESSAGE}`"
+                },
+                {
+                  "type": "mrkdwn",
+                  "text": "*Link para o Commit:* <${GITHUB_COMMIT_URL}|Clique aqui>"
+                },
+                {
+                  "type": "mrkdwn",
+                  "text": "*Data do Commit:* `${GITHUB_COMMIT_TIMESTAMP}`"
+                }
+              ]
+            }
+          ]
+        }' $SLACK_WEBHOOK_URL
